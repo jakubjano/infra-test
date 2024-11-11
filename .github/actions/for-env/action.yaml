@@ -1,0 +1,38 @@
+name: For Env
+description: Do Terraform operation for specified environment
+
+inputs:
+  env:
+    description: Environment in which the action is to be performed
+    required: true
+  operation:
+    description: Operation to be performed
+    required: true
+
+outputs:
+  stdout:
+    description: STDOUT stream of Terraform command
+    value: ${{ steps.for-env.outputs.stdout }}
+  stderr:
+    description: STDERR stream of Terraform command
+    value: ${{ steps.for-env.outputs.stderr }}
+  exitcode:
+    description: Exit code of Terraform command
+    value: ${{ steps.for-env.outputs.exitcode }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Terraform init cache
+      uses: actions/cache@v3
+      with:
+        path: environments/**/.terraform/*
+        key: terraform-init
+    - name: For env
+      id: for-env
+      shell: bash
+      run: |
+        cd environments/${{ inputs.env }}
+        if ! terraform ${{ inputs.operation }}; then
+          exit $?
+        fi

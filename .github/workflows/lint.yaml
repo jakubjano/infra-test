@@ -1,0 +1,45 @@
+name: lint
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+env:
+  TF_IN_AUTOMATION: true
+
+jobs:
+  validate:
+    name: Terraform Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup Terraform
+        id: setup-terraform
+        uses: ./.github/actions/setup-terraform
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v3
+      - name: Init Terraform Environments
+        uses: ./.github/actions/for-each-env
+        with:
+          operation: init -backend=false
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ steps.setup-terraform.outputs.plugin-cache-dir }}
+      - name: Init Terraform Modules
+        uses: ./.github/actions/for-each-module
+        with:
+          operation: init -backend=false
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ steps.setup-terraform.outputs.plugin-cache-dir }}
+      - name: Terraform Format
+        run: terraform fmt -recursive -check -diff
+      - name: Validate
+        uses: ./.github/actions/for-each-env
+        with:
+          operation: validate
+      - name: TFLint
+        run: tflint --recursive --call-module-type=all

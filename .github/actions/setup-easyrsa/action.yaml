@@ -1,0 +1,15 @@
+name: Setup EasyRSA
+description: Setup EasyRSA tooling of specific version
+
+runs:
+  using: "composite"
+  steps:
+    - name: Setup EasyRSA
+      env:
+        EASYRSA_VERSION: 3.1.7
+      shell: bash
+      run: |
+        wget https://github.com/OpenVPN/easy-rsa/releases/download/v${{ env.EASYRSA_VERSION }}/EasyRSA-${{ env.EASYRSA_VERSION }}.tgz
+        tar xvf EasyRSA-${{ env.EASYRSA_VERSION }}.tgz
+        cp EasyRSA-${{ env.EASYRSA_VERSION }}/easyrsa /usr/local/bin/easyrsa
+        rm -rf EasyRSA-${{ env.EASYRSA_VERSION }}*

@@ -1,0 +1,57 @@
+name: apply
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        type: choice
+        description: Environment to be applied
+        required: true
+        options:
+          - dev
+          - stg
+          - prod
+      plan_workflow_id:
+        type: number
+        description: ID of workflow with stored plan artifact
+        required: true
+
+env:
+  TF_IN_AUTOMATION: true
+
+jobs:
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    environment: ${{ github.event.inputs.env }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION }}
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/go-api-template-github-actions-cicd
+          role-session-name: GitHubWorkflowCI
+      - name: Setup Terraform
+        id: setup-terraform
+        uses: ./.github/actions/setup-terraform
+      - name: Init Terraform
+        uses: ./.github/actions/for-env
+        with:
+          env: ${{ github.event.inputs.env }}
+          operation: init
+        env:
+          TF_PLUGIN_CACHE_DIR: ${{ steps.setup-terraform.outputs.plugin-cache-dir }}
+      - name: Download Artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh run download ${{ github.event.inputs.plan_workflow_id }} -n plan-${{ github.event.inputs.env }}.out -D environments/${{ github.event.inputs.env }}
+      - name: Terraform Apply
+        run: |
+          env=${{ github.event.inputs.env }}
+          cd environments/$env
+          terraform apply plan-$env.out

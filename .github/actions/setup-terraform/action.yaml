@@ -1,0 +1,25 @@
+name: Setup Terraform
+description: Setup Terraform tooling of specific version
+
+outputs:
+  plugin-cache-dir:
+    description: Directory containing Terraform plugin cache
+    value: /home/runner/.terraform.d/plugin-cache
+
+runs:
+  using: "composite"
+  steps:
+    - name: Terraform plugin cache
+      uses: actions/cache@v3
+      with:
+        path: /home/runner/.terraform.d/plugin-cache/*
+        key: terraform-plugins
+    - name: Create plugin cache dir
+      shell: bash
+      run: mkdir -p /home/runner/.terraform.d/plugin-cache
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      env:
+        TF_VERSION: 1.8.2
+      with:
+        terraform_version: ${{ env.TF_VERSION }}

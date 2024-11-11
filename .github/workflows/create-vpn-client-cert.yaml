@@ -1,0 +1,28 @@
+name: create-vpn-client-cert
+
+on:
+  workflow_dispatch:
+    inputs:
+      client_name:
+        type: string
+        description: Name of client certificate to be generated
+        required: true
+
+jobs:
+  create-vpn-client-cert:
+    name: Create VPN client certificate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Setup EasyRSA
+        uses: ./.github/actions/setup-easyrsa
+      - name: Generate client cert
+        run: make create-client-cert CLIENT_CRT_NAME=${{ github.event.inputs.client_name }}
+      - name: Commit and push
+        uses: EndBug/add-and-commit@v9
+        with:
+          default_author: github_actions
+          message: "gh actions auto-commit: create vpn client cert for ${{ github.event.inputs.client_name }}"

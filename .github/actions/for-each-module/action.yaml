@@ -1,0 +1,38 @@
+name: For Each Module
+description: Do Terraform operation for each module
+
+inputs:
+  operation:
+    description: Operation to be performed for each module
+    required: true
+
+outputs:
+  stdout:
+    description: STDOUT stream of Terraform command
+    value: ${{ steps.for-each-module.outputs.stdout }}
+  stderr:
+    description: STDERR stream of Terraform command
+    value: ${{ steps.for-each-module.outputs.stderr }}
+  exitcode:
+    description: Exit code of Terraform command
+    value: ${{ steps.for-each-module.outputs.exitcode }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Terraform init cache
+      uses: actions/cache@v3
+      with:
+        path: modules/**/.terraform/*
+        key: terraform-init-modules
+    - name: For each module
+      id: for-each-module
+      shell: bash
+      run: |
+        for module in $(find modules -type d -maxdepth 1 -mindepth 1); do
+          cd $module
+          if ! terraform ${{ inputs.operation }}; then
+            exit $?
+          fi
+          cd -
+        done
